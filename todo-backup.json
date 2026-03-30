@@ -1,0 +1,70 @@
+{
+  "categories": [
+    "Commercial Auto",
+    "General Liability",
+    "Excess Casualty",
+    "Umbrella",
+    "Platform"
+  ],
+  "tasks": [
+    {
+      "text": "Verify Tool for MVR Validations",
+      "done": false,
+      "category": "Commercial Auto"
+    },
+    {
+      "text": "Verify Vehicle Input Process and How to Incorporate VIN Validations",
+      "done": false,
+      "category": "Commercial Auto"
+    },
+    {
+      "text": "Finalize Review of Auto Solartis Run Time and Finalize Requirements for All Auto Pages",
+      "done": false,
+      "category": "Commercial Auto"
+    },
+    {
+      "text": "Develop General Liability Testing Plan and Schedule Time With Testers",
+      "done": false,
+      "category": "General Liability"
+    },
+    {
+      "text": "Create Three GL Test Cases (Convr/UWWB)",
+      "done": false,
+      "category": "General Liability"
+    },
+    {
+      "text": "Create Current Status and Documentation Related to General Liability Product",
+      "done": false,
+      "category": "General Liability"
+    },
+    {
+      "text": "Create Current Status and Documentation Related to Commercial Auto Product",
+      "done": false,
+      "category": "Commercial Auto"
+    },
+    {
+      "text": "Review Stories Created By Kiran And Review With Wall Street Team - Assign to Sprints",
+      "done": false,
+      "top": false,
+      "category": "Excess Casualty"
+    },
+    {
+      "text": "Verify Sprint 1 Stories for Sprint Planning",
+      "done": false,
+      "top": false,
+      "category": "Commercial Auto"
+    },
+    {
+      "text": "Verify Sprint 1 Stories for Sprint Planning",
+      "done": false,
+      "top": false,
+      "category": "Excess Casualty"
+    },
+    {
+      "text": "Verify Sprint 1 Stories for Sprint Planning",
+      "done": false,
+      "top": false,
+      "category": "General Liability"
+    }
+  ]
+}

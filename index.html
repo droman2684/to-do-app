@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notebook To-Do</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #e8e0d0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+      min-height: 100vh;
+    }
+
+    .notebook {
+      width: 900px;
+      background: #fdfdf5;
+      border-radius: 4px;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.25), -1px -1px 4px rgba(0,0,0,0.1);
+      padding: 0;
+      position: relative;
+      background-image:
+        linear-gradient(#c8d8f0 1px, transparent 1px);
+      background-size: 100% 40px;
+      background-position: 0 0;
+    }
+
+    .notebook-header {
+      padding: 16px 20px 0 60px;
+      height: 80px;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      border-bottom: 2px solid #c8d8f0;
+    }
+
+    .notebook-title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #334;
+      line-height: 40px;
+      flex: 1;
+      font-family: 'Georgia', serif;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 4px;
+    }
+
+    select.filter-select {
+      border: none;
+      border-bottom: 1px solid #aab;
+      background: transparent;
+      font-size: 13px;
+      color: #445;
+      padding: 2px 4px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    button.sort-btn {
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      color: #667;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-bottom: 1px solid #aab;
+    }
+
+    button.sort-btn:hover { color: #334; }
+
+    .file-status {
+      font-size: 12px;
+      color: #8a8;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── Category sections ─────────────────────────────── */
+
+    .task-list {
+      padding: 0 0 40px 0;
+      min-height: 400px;
+    }
+
+    .cat-section {
+      border-bottom: 2px solid #c8d8f0;
+    }
+
+    .cat-section:last-child {
+      border-bottom: none;
+    }
+
+    .cat-section-header {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px 0 18px;
+      background: linear-gradient(to right, rgba(200,216,240,0.25), transparent 60%);
+      gap: 8px;
+    }
+
+    .cat-section-header .cat-name {
+      font-family: 'Georgia', serif;
+      font-size: 13px;
+      font-weight: bold;
+      color: #6080b0;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      flex: 1;
+    }
+
+    .cat-section-body {
+      padding: 0 20px 0 60px;
+    }
+
+    /* ── Task rows ─────────────────────────────────────── */
+
+    .task-row {
+      display: flex;
+      align-items: flex-start;
+      min-height: 40px;
+      gap: 8px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    /* Bubble — top-item indicator */
+    .bubble-btn {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 1.5px solid #c0c8d8;
+      background: transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+      margin-top: 4px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .bubble-btn.top {
+      background: #d86040;
+      border-color: #d86040;
+    }
+
+    .task-row input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      cursor: pointer;
+      accent-color: #667;
+      margin-top: 3px;
+    }
+
+    .task-row .task-text {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 15px;
+      color: #223;
+      outline: none;
+      line-height: 20px;
+      font-family: inherit;
+      min-width: 0;
+      resize: none;
+      overflow: hidden;
+      min-height: 20px;
+      padding: 0;
+    }
+
+    .task-row .task-text.done {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    .task-row.is-top .task-text:not(.done) {
+      font-weight: 600;
+    }
+
+    .task-row select.cat-select {
+      border: none;
+      background: transparent;
+      font-size: 12px;
+      color: #778;
+      outline: none;
+      cursor: pointer;
+      max-width: 110px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .task-row .delete-btn {
+      border: none;
+      background: transparent;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0 2px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.15s;
+      margin-top: 1px;
+    }
+
+    .task-row:hover .delete-btn { opacity: 1; }
+    .task-row .delete-btn:hover { color: #e66; }
+
+    /* ── New task row ───────────────────────────────────── */
+
+    .new-task-row {
+      display: flex;
+      align-items: flex-start;
+      min-height: 40px;
+      gap: 8px;
+      border-top: 1px dashed #dde;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    .new-task-row textarea {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 15px;
+      outline: none;
+      font-family: inherit;
+      font-style: italic;
+      color: #aab;
+      line-height: 20px;
+      padding: 0;
+      min-height: 20px;
+      resize: none;
+      overflow: hidden;
+    }
+
+    .new-task-row textarea:focus {
+      font-style: normal;
+      color: #223;
+    }
+
+    .new-task-row select.cat-select {
+      border: none;
+      background: transparent;
+      font-size: 12px;
+      color: #778;
+      outline: none;
+      cursor: pointer;
+      max-width: 110px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+
+    .new-task-row.active select.cat-select {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ── Footer (add category) ─────────────────────────── */
+
+    .footer-row {
+      display: flex;
+      align-items: center;
+      height: 40px;
+      gap: 8px;
+      padding: 0 20px 0 60px;
+      border-top: 2px solid #c8d8f0;
+      flex-wrap: wrap;
+    }
+
+    .footer-row input[type="text"] {
+      border: none;
+      border-bottom: 1px solid #c8d8f0;
+      background: transparent;
+      font-size: 13px;
+      color: #556;
+      outline: none;
+      width: 140px;
+      font-family: inherit;
+    }
+
+    .footer-row button.add-cat-btn {
+      border: none;
+      background: transparent;
+      color: #778;
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 1px solid #c8d8f0;
+      padding: 0 6px;
+    }
+
+    .footer-row button.add-cat-btn:hover { color: #334; }
+
+    .cat-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #556;
+      background: #eef2fb;
+      border-radius: 3px;
+      padding: 2px 6px;
+    }
+
+    .cat-tag .del-cat-btn {
+      border: none;
+      background: transparent;
+      color: #aab;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .cat-tag .del-cat-btn:hover { color: #e66; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="notebook">
+  <div class="notebook-header">
+    <div class="notebook-title">To-Do</div>
+    <div class="controls">
+      <select class="filter-select" id="filterSelect">
+        <option value="">All categories</option>
+      </select>
+      <button class="sort-btn" id="sortBtn">Sort sections</button>
+      <button class="sort-btn" id="fileBtn">Open file</button>
+      <span class="file-status" id="fileStatus"></span>
+    </div>
+  </div>
+
+  <div class="task-list" id="taskList"></div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'notebook_todo';
+
+  let state = load();
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {
+      categories: ['Personal', 'Work', 'Shopping'],
+      tasks: []
+    };
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  function getFilterValue() {
+    return document.getElementById('filterSelect').value;
+  }
+
+  function render() {
+    const list = document.getElementById('taskList');
+    const filter = getFilterValue();
+
+    list.innerHTML = '';
+
+    const categoriesToShow = filter ? [filter] : state.categories;
+
+    categoriesToShow.forEach(cat => {
+      const section = document.createElement('div');
+      section.className = 'cat-section';
+
+      // Section header
+      const header = document.createElement('div');
+      header.className = 'cat-section-header';
+
+      const catName = document.createElement('span');
+      catName.className = 'cat-name';
+      catName.textContent = cat;
+      header.appendChild(catName);
+
+      section.appendChild(header);
+
+      // Section body
+      const body = document.createElement('div');
+      body.className = 'cat-section-body';
+
+      // Tasks: top items first, then rest
+      const catTasks = state.tasks.filter(t => t.category === cat);
+      const sorted = [...catTasks.filter(t => t.top), ...catTasks.filter(t => !t.top)];
+
+      sorted.forEach(task => {
+        body.appendChild(makeTaskRow(task));
+      });
+
+      // New task input for this section
+      const newRow = document.createElement('div');
+      newRow.className = 'new-task-row';
+
+      const newInput = document.createElement('textarea');
+      newInput.placeholder = 'Add a task…';
+      newInput.rows = 1;
+      newInput.oninput = () => { autoResize(newInput); };
+      newInput.onfocus = () => newRow.classList.add('active');
+      newInput.onblur = () => { if (!newInput.value.trim()) newRow.classList.remove('active'); };
+
+      const newCatSel = makeCatSelect(cat);
+
+      newInput.onkeydown = e => {
+        if (e.key === 'Enter' && !e.shiftKey && newInput.value.trim()) {
+          e.preventDefault();
+          state.tasks.push({ text: newInput.value.trim(), done: false, top: false, category: newCatSel.value });
+          save(); render();
+          setTimeout(() => {
+            const sections = list.querySelectorAll('.cat-section');
+            const idx = categoriesToShow.indexOf(cat);
+            if (sections[idx]) {
+              const ta = sections[idx].querySelector('.new-task-row textarea');
+              if (ta) ta.focus();
+            }
+          }, 0);
+        }
+      };
+
+      newRow.append(newInput, newCatSel);
+      body.appendChild(newRow);
+      section.appendChild(body);
+      list.appendChild(section);
+    });
+
+    // Footer: add / delete categories
+    const footer = document.createElement('div');
+    footer.className = 'footer-row';
+
+    const catInput = document.createElement('input');
+    catInput.type = 'text';
+    catInput.placeholder = 'New category…';
+
+    const catBtn = document.createElement('button');
+    catBtn.className = 'add-cat-btn';
+    catBtn.textContent = '+ Add';
+    catBtn.onclick = () => {
+      const val = catInput.value.trim();
+      if (val && !state.categories.includes(val)) {
+        state.categories.push(val);
+        save(); renderFilterSelect(); render();
+        catInput.value = '';
+      }
+    };
+    catInput.onkeydown = e => { if (e.key === 'Enter') catBtn.click(); };
+
+    footer.append(catInput, catBtn);
+
+    state.categories.forEach(cat => {
+      const tag = document.createElement('span');
+      tag.className = 'cat-tag';
+      tag.textContent = cat;
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'del-cat-btn';
+      delBtn.textContent = '×';
+      delBtn.title = `Delete "${cat}"`;
+      delBtn.onclick = () => {
+        if (state.categories.length <= 1) { alert('You must keep at least one category.'); return; }
+        const fallback = state.categories.find(c => c !== cat) || '';
+        state.categories = state.categories.filter(c => c !== cat);
+        state.tasks.forEach(t => { if (t.category === cat) t.category = fallback; });
+        const sel = document.getElementById('filterSelect');
+        if (sel.value === cat) sel.value = '';
+        save(); renderFilterSelect(); render();
+      };
+
+      tag.appendChild(delBtn);
+      footer.appendChild(tag);
+    });
+
+    list.appendChild(footer);
+  }
+
+  function makeTaskRow(task) {
+    const row = document.createElement('div');
+    row.className = 'task-row' + (task.top ? ' is-top' : '');
+
+    // Bubble
+    const bubble = document.createElement('button');
+    bubble.className = 'bubble-btn' + (task.top ? ' top' : '');
+    bubble.title = task.top ? 'Remove top-item mark' : 'Mark as top item';
+    bubble.onclick = () => {
+      task.top = !task.top;
+      save(); render();
+    };
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = task.done;
+    cb.onchange = () => { task.done = cb.checked; save(); render(); };
+
+    const text = document.createElement('textarea');
+    text.className = 'task-text' + (task.done ? ' done' : '');
+    text.value = task.text;
+    text.rows = 1;
+    autoResize(text);
+    text.oninput = () => autoResize(text);
+    text.onchange = () => { task.text = text.value; save(); };
+    text.onblur = () => { task.text = text.value; save(); };
+    text.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); task.text = text.value; save(); } };
+
+    const catSel = makeCatSelect(task.category);
+    catSel.onchange = () => { task.category = catSel.value; save(); render(); };
+
+    const del = document.createElement('button');
+    del.className = 'delete-btn';
+    del.textContent = '×';
+    del.onclick = () => {
+      state.tasks = state.tasks.filter(t => t !== task);
+      save(); render();
+    };
+
+    row.append(bubble, cb, text, catSel, del);
+    return row;
+  }
+
+  function makeCatSelect(selected) {
+    const sel = document.createElement('select');
+    sel.className = 'cat-select';
+    state.categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      if (cat === selected) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    return sel;
+  }
+
+  function renderFilterSelect() {
+    const sel = document.getElementById('filterSelect');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All categories</option>';
+    state.categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      if (cat === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  document.getElementById('filterSelect').onchange = () => render();
+
+  // Sort: within each section, top items first, then alphabetically by text
+  document.getElementById('sortBtn').onclick = () => {
+    state.tasks.sort((a, b) => {
+      if (a.category !== b.category) return state.categories.indexOf(a.category) - state.categories.indexOf(b.category);
+      if (a.top !== b.top) return a.top ? -1 : 1;
+      return a.text.localeCompare(b.text);
+    });
+    save(); render();
+  };
+
+  // File System Access API
+  let fileHandle = null;
+
+  function setFileStatus(name) {
+    const el = document.getElementById('fileStatus');
+    el.textContent = name ? '● ' + name : '';
+    el.title = name || '';
+  }
+
+  async function writeToFile() {
+    if (!fileHandle) return;
+    try {
+      const writable = await fileHandle.createWritable();
+      await writable.write(JSON.stringify(state, null, 2));
+      await writable.close();
+    } catch (e) {
+      console.warn('Auto-save failed:', e);
+    }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    writeToFile();
+  }
+
+  document.getElementById('fileBtn').onclick = async () => {
+    if (!('showOpenFilePicker' in window)) {
+      alert('File System Access API is not supported in this browser. Use Chrome or Edge.');
+      return;
+    }
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+        excludeAcceptAllOption: true
+      });
+      fileHandle = handle;
+      setFileStatus(handle.name);
+
+      const file = await handle.getFile();
+      const text = await file.text();
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed.tasks && parsed.categories) {
+          state = parsed;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          renderFilterSelect();
+          render();
+        }
+      } catch {
+        // empty or new file — will be written on next save
+      }
+
+      document.getElementById('fileBtn').textContent = 'Change file';
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+    }
+  };
+
+  renderFilterSelect();
+  render();
+</script>
+</body>
+</html>
