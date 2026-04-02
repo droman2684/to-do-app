@@ -139,6 +139,34 @@
       padding-bottom: 10px;
     }
 
+    .move-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex-shrink: 0;
+      margin-top: -1px;
+    }
+
+    .move-btn {
+      border: none;
+      background: transparent;
+      color: #889;
+      cursor: pointer;
+      padding: 0 2px;
+      font-size: 11px;
+      line-height: 1;
+      height: 10px;
+    }
+
+    .move-btn:hover:not(:disabled) {
+      color: #556;
+    }
+
+    .move-btn:disabled {
+      color: #ccd;
+      cursor: default;
+    }
+
     /* Bubble — top-item indicator */
     .bubble-btn {
       width: 11px;
@@ -404,9 +432,9 @@
       const body = document.createElement('div');
       body.className = 'cat-section-body';
 
-      // Tasks: top items first, then rest
-      const catTasks = state.tasks.filter(t => t.category === cat);
-      const sorted = [...catTasks.filter(t => t.top), ...catTasks.filter(t => !t.top)];
+      // Tasks: incomplete items first, completed items at the bottom of the section.
+      // Within each group, keep top items ahead of the rest.
+      const sorted = getSectionTasks(cat);
 
       sorted.forEach(task => {
         body.appendChild(makeTaskRow(task));
@@ -500,6 +528,35 @@
     const row = document.createElement('div');
     row.className = 'task-row' + (task.top ? ' is-top' : '');
 
+    const moveControls = document.createElement('div');
+    moveControls.className = 'move-controls';
+
+    const upBtn = document.createElement('button');
+    upBtn.className = 'move-btn';
+    upBtn.type = 'button';
+    upBtn.textContent = '▲';
+    upBtn.title = 'Move up';
+    upBtn.disabled = !canMoveTask(task, -1);
+    upBtn.onclick = () => {
+      moveTaskWithinGroup(task, -1);
+      save();
+      render();
+    };
+
+    const downBtn = document.createElement('button');
+    downBtn.className = 'move-btn';
+    downBtn.type = 'button';
+    downBtn.textContent = '▼';
+    downBtn.title = 'Move down';
+    downBtn.disabled = !canMoveTask(task, 1);
+    downBtn.onclick = () => {
+      moveTaskWithinGroup(task, 1);
+      save();
+      render();
+    };
+
+    moveControls.append(upBtn, downBtn);
+
     // Bubble
     const bubble = document.createElement('button');
     bubble.className = 'bubble-btn' + (task.top ? ' top' : '');
@@ -512,7 +569,12 @@
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.checked = task.done;
-    cb.onchange = () => { task.done = cb.checked; save(); render(); };
+    cb.onchange = () => {
+      task.done = cb.checked;
+      repositionTaskInCategory(task);
+      save();
+      render();
+    };
 
     const text = document.createElement('textarea');
     text.className = 'task-text' + (task.done ? ' done' : '');
@@ -535,7 +597,7 @@
       save(); render();
     };
 
-    row.append(bubble, cb, text, catSel, del);
+    row.append(moveControls, bubble, cb, text, catSel, del);
     return row;
   }
 
@@ -550,6 +612,59 @@
       sel.appendChild(opt);
     });
     return sel;
+  }
+
+  function getSectionTasks(category) {
+    return state.tasks.filter(t => t.category === category);
+  }
+
+  function getSectionOrder(task) {
+    return getSectionTasks(task.category);
+  }
+
+  function canMoveTask(task, direction) {
+    const sectionTasks = getSectionOrder(task);
+    const index = sectionTasks.indexOf(task);
+    const nextIndex = index + direction;
+    return index !== -1 && nextIndex >= 0 && nextIndex < sectionTasks.length;
+  }
+
+  function moveTaskWithinGroup(task, direction) {
+    const sectionTasks = getSectionOrder(task);
+    const sectionIndex = sectionTasks.indexOf(task);
+    const swapTask = sectionTasks[sectionIndex + direction];
+    if (!swapTask) return;
+
+    const taskIndex = state.tasks.indexOf(task);
+    const swapIndex = state.tasks.indexOf(swapTask);
+    if (taskIndex === -1 || swapIndex === -1) return;
+
+    [state.tasks[taskIndex], state.tasks[swapIndex]] = [state.tasks[swapIndex], state.tasks[taskIndex]];
+  }
+
+  function repositionTaskInCategory(task) {
+    const currentIndex = state.tasks.indexOf(task);
+    if (currentIndex === -1) return;
+
+    state.tasks.splice(currentIndex, 1);
+
+    const categoryIndexes = state.tasks
+      .map((t, index) => ({ t, index }))
+      .filter(entry => entry.t.category === task.category);
+
+    if (task.done) {
+      const insertAt = categoryIndexes.length
+        ? categoryIndexes[categoryIndexes.length - 1].index + 1
+        : state.tasks.length;
+      state.tasks.splice(insertAt, 0, task);
+      return;
+    }
+
+    const firstDone = categoryIndexes.find(entry => entry.t.done);
+    const insertAt = firstDone ? firstDone.index : (categoryIndexes.length
+      ? categoryIndexes[categoryIndexes.length - 1].index + 1
+      : state.tasks.length);
+    state.tasks.splice(insertAt, 0, task);
   }
 
   function renderFilterSelect() {
@@ -567,10 +682,12 @@
 
   document.getElementById('filterSelect').onchange = () => render();
 
-  // Sort: within each section, top items first, then alphabetically by text
+  // Sort: within each section, incomplete items first, then completed;
+  // top items stay ahead inside each completion group.
   document.getElementById('sortBtn').onclick = () => {
     state.tasks.sort((a, b) => {
       if (a.category !== b.category) return state.categories.indexOf(a.category) - state.categories.indexOf(b.category);
+      if (a.done !== b.done) return a.done ? 1 : -1;
       if (a.top !== b.top) return a.top ? -1 : 1;
       return a.text.localeCompare(b.text);
     });
